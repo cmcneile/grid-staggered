@@ -30,7 +30,7 @@ COMPILER=$(shell $(config) --cxx)
 
 
 
-cg.x: compute_staggered_pion.cc :
+cg.x: compute_staggered_pion.cc
 	$(COMPILER) -g -o $@ $(CXXFLASGS)  compute_staggered_pion.cc   $(LDFLAGS) $(LIBS) 
 
 
