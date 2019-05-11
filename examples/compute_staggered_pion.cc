@@ -87,6 +87,7 @@ void anti_peroidic( LatticeGaugeField & Umu , int nt)
 }
 
 
+
 int main (int argc, char ** argv)
 {
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
@@ -106,15 +107,14 @@ int main (int argc, char ** argv)
       cout << "Lattice[ " << mu << " ]= " << latt_size[mu] << endl ;
     }
 
-
   std::vector<int> seeds({1,2,3,4});
   GridParallelRNG          pRNG(&Grid);  pRNG.SeedFixedIntegers(seeds);
 
   FermionField result(&Grid); result=zero;
+  
+   LatticeGaugeField Umu(&Grid); 
 
-  //  create a hot su3 configuration
-  LatticeGaugeField Umu(&Grid); 
-
+   //  create a hot su3 configuration
   //  SU3::HotConfiguration(pRNG,Umu);
   SU3::ColdConfiguration(Umu); // Umu = 1  
 
@@ -129,7 +129,6 @@ int main (int argc, char ** argv)
       LatticeColourMatrix   g(&Grid); // Gauge xform
       SU3::RandomGaugeTransform(pRNG,Umu,g); // Unit gauge
       cout << "Random Gauge Transform applied "  << endl ; 
-
     }
   else
     {
@@ -149,11 +148,9 @@ int main (int argc, char ** argv)
   RealD c1= 2.0 ;
   RealD c2= 0.0 ;
 
-  // Naik coefficients
+  // Naik coefficients (See reference in Grid library)
   //  RealD c1=9.0/8.0;
   // RealD c2=-1.0/24.0;
-
-
 
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,c1,c2,u0);
 
@@ -187,11 +184,10 @@ int main (int argc, char ** argv)
 
       // create point source
 
-      // tests/core/Test_staggered5Dvec.cc
-      // src is FermiionFiel
+      // ideas from tests/core/Test_staggered5Dvec.cc
       std::vector<int> site({0,0,0,0});
       ColourVector cv = zero;
-      cv()()(ic)=1.0;  //  add ic craig
+      cv()()(ic)=1.0;
       local_src = zero;
       pokeSite(cv,local_src,site);
 
@@ -203,7 +199,6 @@ int main (int argc, char ** argv)
        out = zero ;  // intial guess
 
       CG(HermOp,local_src,out);
-
 
       // add solution to propagator structure
       FermToProp_s(Qprop, out , ic  ) ; 
@@ -238,6 +233,7 @@ int main (int argc, char ** argv)
   sliceSum(c, corr, Tp);
 
   // output the correlators
+  cout << "Pseuodscalar Goldstone pion \n" ;
   for(int tt = 0 ; tt < nt ; ++tt)
     {
       double ttt = real(corr[tt]) ;
