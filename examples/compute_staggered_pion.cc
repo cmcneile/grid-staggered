@@ -1,9 +1,13 @@
     /*************************************************************************************
 
+    This is a test code for computing staggered correlators using the
+    Grid library. At the moment this is indended as a test code, to make
+    sure we the phases correct.
 
-    Perhaps a better starting point:
-    typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
+    The Grid library doesn't currently have routines to fatten the links,
+    because Grid routines are intended to be called by application code.
 
+    This uses naive staggered fermions.
 
     Grid physics library, www.github.com/paboyle/Grid 
 
@@ -40,23 +44,9 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
-template<class d>
-struct scal {
-  d internal;
-};
-
-  Gamma::Algebra Gmu [] = {
-    Gamma::Algebra::GammaX,
-    Gamma::Algebra::GammaY,
-    Gamma::Algebra::GammaZ,
-    Gamma::Algebra::GammaT
-  };
-
-
-
 
 //////////////////////////////////////////////
-// Load Fermion intro propagator 
+// Load Fermion vector into propagator 
 //////////////////////////////////////////////
 
 void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & psi , const int c)
@@ -70,7 +60,11 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 
 }
 
-void ante_peroidic( LatticeGaugeField & Umu , int nt)
+//////////////////////////////////////////////////
+//  Apply anti-peroidic boundary conditions in time
+////////////////////////////////////////////////////
+
+void anti_peroidic( LatticeGaugeField & Umu , int nt)
 {
   int mu = 3 ;  // time directiom
   GridBase *grid = Umu._grid;
@@ -89,7 +83,7 @@ void ante_peroidic( LatticeGaugeField & Umu , int nt)
 
   PokeIndex<LorentzIndex>(Umu,U,mu);
 
-  cout << "Ante-peroidic boundary conditions in time applied" << endl ; 
+  cout << "Anti-peroidic boundary conditions in time applied" << endl ; 
 }
 
 
@@ -98,8 +92,6 @@ int main (int argc, char ** argv)
   typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
   typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
-
-  //  cout << "DEBUG boundary " << params.boundary << endl ;
 
   Grid_init(&argc,&argv);
 
@@ -129,7 +121,7 @@ int main (int argc, char ** argv)
   int t_dir = 3;
   int nt =latt_size[t_dir];
 
-  ante_peroidic( Umu , nt ) ;
+  anti_peroidic( Umu , nt ) ;
 
   const int g_trans =  0;
   if( g_trans == 1)
@@ -144,36 +136,27 @@ int main (int argc, char ** argv)
    cout << "NO Gauge Transform applied "  << endl ; 
     }
 
-
-  //  cout << "DEBUG " << Umu << endl ; 
-
   double volume=1;
   for(int mu=0;mu<Nd;mu++){
     volume=volume*latt_size[mu];
   }  
   
   RealD mass=0.1;
+
+  // This uses the Milc conventions. See gridStaggInvert.cc in the MILC code.
+  // Naive staggered action
+  RealD u0=1.0;
+  RealD c1= 2.0 ;
+  RealD c2= 0.0 ;
+
+  // Naik coefficients
   //  RealD c1=9.0/8.0;
   // RealD c2=-1.0/24.0;
 
-  RealD c1= 1.0 ;
-  //  RealD c2=-1.0/24 ;
-  //  RealD c2=-1.0 ;
-  RealD c2=0.0 ;
 
 
-  RealD u0=1.0;
-  //  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,c1,c2,u0);
 
-  // From gridStaggInvert.cc
-  //  ImprovedStaggeredFermion Ds(*CGrid, *RBGrid, 2.*mass, 2., 2., 1.);
-  //  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,2.0,2.0,1.0);
-  
-    ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,2.0,0.0,1.0);
-
-  //      ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,1.0,0.0,1.0);
-  //      ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,1.0,0.0,1.0);
-  //    ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,2.0,0.0,1.0);
 
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
@@ -193,6 +176,9 @@ int main (int argc, char ** argv)
   cout << "Inversion for mass "   << mass << endl ; 
 
   // Compute the staggered quark propator
+  // Solve for x 
+  // M^dagger * M * x = M^dagger * src
+
   for(int ic = 0 ; ic < 3 ; ++ic)
     {
       cout << "---------------------------------------------" << endl ; 
@@ -217,20 +203,10 @@ int main (int argc, char ** argv)
        out = zero ;  // intial guess
 
       CG(HermOp,local_src,out);
-      //  cout << "out = " << out << endl ; 
-      // Apply M^\dagger
 
-      //      Ds.Mdag(out, local_src) ;
-      //      Ds.MeooeDag(out, local_src) ;  // bad
-      //Ds.MooeeDag(out, local_src) ; // OK
-      //      Ds.MooeeInvDag(out, local_src) ; 
-
-      //      Ds.Mdag(out, local_src) ;
-      //out = local_src ;
 
       // add solution to propagator structure
       FermToProp_s(Qprop, out , ic  ) ; 
-
 
       // compute the residual
        Ds.M(out, D_out) ;
@@ -247,8 +223,6 @@ int main (int argc, char ** argv)
   // 
   //  -----  Use the quark propagator to compute the pion correlator
   //
-  // cout << "Qprop = " << Qprop << endl ; 
-
 
   // pion correlator
   std::vector<TComplex> corr(nt)  ;
@@ -257,25 +231,18 @@ int main (int argc, char ** argv)
   LatticeComplex  c(&Grid)  ;
 
    c = trace(Qprop * adj(Qprop)) ; 
-  //  c = trace(Qprop * Qprop ) ; 
 
-
-  //  cout << c << endl ;
-
-  //  this correlator over the lattice is summed over the spatial
+  //  The correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
   cout << "Tp = " << Tp  << endl; 
   sliceSum(c, corr, Tp);
 
   // output the correlators
-#if 1
   for(int tt = 0 ; tt < nt ; ++tt)
     {
       double ttt = real(corr[tt]) ;
       cout << tt << " "  <<  ttt  << endl ;
     }
-#endif
-  //  cout << "corr = " << corr << endl ; 
 
   // End of the Grid
   Grid_finalize();
