@@ -70,7 +70,27 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 
 }
 
+void ante_peroidic( LatticeGaugeField & Umu , int nt)
+{
+  int mu = 3 ;  // time directiom
+  GridBase *grid = Umu._grid;
+  // conformable(grid,g._grid);
+  LatticeColourMatrix U(grid);
 
+  U= PeekIndex<LorentzIndex>(Umu,mu);
+
+  // code hacked from Grid/Grid/qcd/action/fermion/FermionOperatorImpl.h`
+  Lattice<iScalar<vInteger> > t(grid); LatticeCoordinate(t,3);
+  LatticeComplex phases(grid); phases=1.0;
+
+  --nt ;
+  phases = where( t ==(Integer)nt, phases,-phases);
+  U = phases * U ;
+
+  PokeIndex<LorentzIndex>(Umu,U,mu);
+
+  cout << "Ante-peroidic boundary conditions in time applied" << endl ; 
+}
 
 
 int main (int argc, char ** argv)
@@ -79,6 +99,7 @@ int main (int argc, char ** argv)
   typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
   typename ImprovedStaggeredFermionR::ImplParams params; 
 
+  //  cout << "DEBUG boundary " << params.boundary << endl ;
 
   Grid_init(&argc,&argv);
 
@@ -105,6 +126,11 @@ int main (int argc, char ** argv)
   //  SU3::HotConfiguration(pRNG,Umu);
   SU3::ColdConfiguration(Umu); // Umu = 1  
 
+  int t_dir = 3;
+  int nt =latt_size[t_dir];
+
+  ante_peroidic( Umu , nt ) ;
+
   const int g_trans =  0;
   if( g_trans == 1)
     {
@@ -127,19 +153,40 @@ int main (int argc, char ** argv)
   }  
   
   RealD mass=0.1;
-  RealD c1=9.0/8.0;
-  RealD c2=-1.0/24.0;
+  //  RealD c1=9.0/8.0;
+  // RealD c2=-1.0/24.0;
+
+  RealD c1= 1.0 ;
+  //  RealD c2=-1.0/24 ;
+  //  RealD c2=-1.0 ;
+  RealD c2=0.0 ;
+
+
   RealD u0=1.0;
-  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+  //  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,c1,c2,u0);
+
+  // From gridStaggInvert.cc
+  //  ImprovedStaggeredFermion Ds(*CGrid, *RBGrid, 2.*mass, 2., 2., 1.);
+  //  ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,2.0,2.0,1.0);
+  
+    ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,2.0,0.0,1.0);
+
+  //      ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,1.0,0.0,1.0);
+  //      ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,1.0,0.0,1.0);
+  //    ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,mass,2.0,0.0,1.0);
 
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
-  ConjugateGradient<FermionField> CG(1.0e-6,10000);
+  ConjugateGradient<FermionField> CG(1.0e-8,10000);
 
 
   //  ./Grid/qcd/QCD.h
   LatticeStaggeredFermion local_src(&Grid) ;
   LatticeStaggeredFermion out(&Grid) ;
   LatticeStaggeredPropagator Qprop(&Grid)  ;
+
+  LatticeStaggeredFermion D_out(&Grid) ;
+  LatticeStaggeredFermion res(&Grid) ;
+  LatticeStaggeredFermion tmp(&Grid) ;
 
   Qprop = zero ;
 
@@ -162,17 +209,39 @@ int main (int argc, char ** argv)
       local_src = zero;
       pokeSite(cv,local_src,site);
 
+      // apply Mdagg
+      Ds.Mdag(local_src, out) ;
+      local_src = out ;
+
       // invert 
        out = zero ;  // intial guess
 
       CG(HermOp,local_src,out);
       //  cout << "out = " << out << endl ; 
       // Apply M^\dagger
-      Ds.Mdag(out, local_src) ;
-      out = local_src ;
+
+      //      Ds.Mdag(out, local_src) ;
+      //      Ds.MeooeDag(out, local_src) ;  // bad
+      //Ds.MooeeDag(out, local_src) ; // OK
+      //      Ds.MooeeInvDag(out, local_src) ; 
+
+      //      Ds.Mdag(out, local_src) ;
+      //out = local_src ;
 
       // add solution to propagator structure
       FermToProp_s(Qprop, out , ic  ) ; 
+
+
+      // compute the residual
+       Ds.M(out, D_out) ;
+       Ds.Mdag(D_out, tmp) ;
+       D_out = tmp ; 
+
+       res = D_out - local_src ;
+       RealD nrm = norm2(res); 
+       double xxx = (double) nrm*1.0 ;
+       cout << "Residual = " <<  std::sqrt(xxx)  << endl ; 
+
     }
 
   // 
@@ -180,8 +249,6 @@ int main (int argc, char ** argv)
   //
   // cout << "Qprop = " << Qprop << endl ; 
 
-  int t_dir = 3;
-  int nt =latt_size[t_dir];
 
   // pion correlator
   std::vector<TComplex> corr(nt)  ;
@@ -189,7 +256,11 @@ int main (int argc, char ** argv)
   // contract the quark propagators
   LatticeComplex  c(&Grid)  ;
 
-  c = trace(Qprop * adj(Qprop)) ; 
+   c = trace(Qprop * adj(Qprop)) ; 
+  //  c = trace(Qprop * Qprop ) ; 
+
+
+  //  cout << c << endl ;
 
   //  this correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
