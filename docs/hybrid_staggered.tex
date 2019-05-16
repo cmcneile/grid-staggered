@@ -1,0 +1,177 @@
+%% 
+%%  http://wso.williams.edu/wiki/index.php/LaTeX_Problem_Set_Template
+%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%This is a science homework template. Modify the preamble to suit
+%%%your needs. 
+%The junk text is   there for you to immediately see how the
+%headers/footers look at first 
+%typesetting.
+
+
+\documentclass[12pt]{article}
+
+%AMS-TeX packages
+\usepackage{amssymb,amsmath,amsthm} 
+%geometry (sets margin) and other useful packages
+\usepackage[margin=1.25in]{geometry}
+\usepackage{graphicx,ctable,booktabs}
+\usepackage{url}
+
+%    
+\begin{document}
+
+\title{Interpolating operators for hybrid mesons using staggered fermions }
+%%\author{Craig McNeile}
+\date{}
+
+\maketitle
+
+
+\section{Introduction}
+
+See the review by Meyer about hybrid mesons~\cite{Meyer:2015eta}.
+
+\section{Operators with staggered fermioms}
+
+An operator to create a $1^{-+}$ state using staggered fermions
+was first written down by the MILC collaboration~\cite{Bernard:2003jd}.
+
+In the continuum~\cite{Lacock:1996vy,Bernard:1997ib},
+the $1^{-+}$ operator can be
+defined via $\rho \times B$,
+where $\rho$ is the interpolating
+operator for the vector meson and 
+and the gluon field strength tensor.
+
+
+\begin{figure}[htb]
+\setlength{\unitlength}{0.5in}
+\begin{picture}(6.0,2.3)(-3.0,-1.15)	%origin at center
+
+% Four plaquettes making up F_mu_nu
+\thicklines
+\put(0.2,0.1){\vector(1,0){0.8}}
+\put(1.0,0.1){\vector(0,1){0.9}}
+\put(1.0,1.0){\vector(-1,0){0.9}}
+\put(0.1,1.0){\vector(0,-1){0.8}}
+
+\put(-0.1,0.2){\vector(0,1){0.8}}
+\put(-0.1,1.0){\vector(-1,0){0.9}}
+\put(-1.0,1.0){\vector(0,-1){0.9}}
+\put(-1.0,0.1){\vector(1,0){0.8}}
+
+\put(-0.2,-0.1){\vector(-1,0){0.8}}
+\put(-1.0,-0.1){\vector(0,-1){0.9}}
+\put(-1.0,-1.0){\vector(1,0){0.9}}
+\put(-0.1,-1.0){\vector(0,1){0.8}}
+
+\put(0.1,-0.2){\vector(0,-1){0.8}}
+\put(0.1,-1.0){\vector(1,0){0.9}}
+\put(1.0,-1.0){\vector(0,1){0.9}}
+\put(1.0,-0.1){\vector(-1,0){0.8}}
+
+% staples plus link making smeared link
+\put(1.9,0.0){\vector(1,0){0.9}}
+\put(3.0,-0.1){=}
+\thinlines
+\put(3.4,0.0){\vector(1,0){0.9}}
+\put(3.4,0.1){\vector(0,1){0.9}}
+\put(3.4,1.0){\vector(1,0){0.9}}
+\put(4.3,1.0){\vector(0,-1){0.9}}
+\put(3.4,-0.1){\vector(0,-1){0.9}}
+\put(3.4,-1.0){\vector(1,0){0.9}}
+\put(4.3,-1.0){\vector(0,1){0.9}}
+
+\end{picture}
+\caption{
+``pointlike'' construction of $F_{\mu\nu}$. Each open loop represents
+the product of the links, minus the adjoint of the product.
+Each of these links may actually be a ``smeared'' link, as illustrated
+on the right side of the figure.
+}
+\label{FIELDFIG}
+\end{figure}
+
+An explicit hybrid operaor in the continuum is
+\begin{equation}
+1^{-+}_x = \rho_y B_z - \rho_z  B_y
+\end{equation}
+where
+
+\begin{equation}
+\rho_i = \overline{\psi} \gamma_i \psi
+\end{equation}
+
+An early discussion of the group theory of 
+the hybrid mesons on the lattice is by
+Lacock et al.~\cite{Lacock:1996vy}.
+
+There are a few additional issues with representing using the 
+hybrid operator with staggered fermions. In this formalism
+the $\gamma$ matrices are replaced by phases.
+The $1^{-+}$ operator is $H_i$
+\begin{equation}
+H_i = \epsilon_{ijk} \overline{\psi}^a (\gamma_j \otimes 1) \psi^b
+B_k^{ab}  \label{eq:hybStagg}
+\end{equation}
+where $i$, $j$, and $k$ are spatial indices and $a$ and $b$ 
+are colour indices. The field strength $B_k^{ab}$ is
+defined by gauge links.
+
+
+The MILC collaboration used a taste singlet $\rho$ operator
+$(\gamma_x \times  1 )$
+The taste singlet staggered operator 
+for the vector operator, which couples to the $\rho$ meson, is:
+%%%
+\begin{equation}
+\rho_k = \overline{\chi}  \eta_k D_k \chi
+\end{equation}
+%%
+where $\chi$ and $\overline{\chi}$ are quark and anti-quark fields.
+The $\eta$ are the standard staggered phases.
+See Gupta~\cite{Gupta:1997nd} for a review.
+\begin{equation}
+\eta_{x,\mu} = -1^{\sum_{\nu < \mu} x_\nu}
+\end{equation}
+
+
+\begin{equation}
+D_\mu \chi(x) = \frac{1}{2}
+[ U_\mu^\dagger(x - \hat{\mu}) \chi( x - \hat{\mu}) + U_{\mu} (x)
+  \chi( x + \hat{\mu}) ]
+\end{equation}
+
+
+\subsection{Implementation in the MILC code}
+
+The hybrid correlator is constructed below.
+\begin{equation}
+c(t)_i^{hyb}  = \sum_{x} \langle H^{\dagger}_i (x,t)  H(0,0)_i
+\rangle
+\end{equation}
+
+The latest version of the MILC code uses a flexible system to create
+meson correlators. Essentially a hybrid quark source is created using
+the operator in equation~\ref{eq:hybStagg}. A quark propagator is then 
+computed from the $H_i$ source. The $H_i$ source is then applied at
+the
+sink. The quark propagator with $H_i$  at the source and sink 
+is then combined with a quark propagator
+generated from a point source to form the hybrid meson correlator.
+
+
+\subsection{Smearing and sources}
+
+In the orginal paper by the MILC collaboration~\cite{Bernard:2003jd}, 
+the field strength tensor was smeared by APE smearing.
+The number of iterations was 32 and the relative weight was 0.25.
+
+
+\bibliographystyle{h-physrev5}
+\bibliography{hybrid}
+
+
+\end{document}
