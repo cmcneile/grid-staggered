@@ -244,15 +244,16 @@ int main (int argc, char ** argv)
   //  field strength tensor
   //  from Grid/qcd/action/fermion/WilsonCloverFermion.cc
 
-  //  typename Impl::GaugeLinkField Bx(Grid), By(Grid), Bz(Grid), Ex(Grid), Ey(Grid), Ez(Grid);
-  //  typedef typename Gimpl::GaugeLinkField GaugeMat;
   typedef typename PeriodicGimplR::GaugeLinkField GaugeMat;
-  //  GaugeMat Bx(Grid), By(Grid), Bz(Grid), Ex(Grid), Ey(Grid), Ez(Grid);  
   GaugeMat Bx(&Grid) , By(&Grid), Bz(&Grid), Ex(&Grid), Ey(&Grid), Ez(&Grid);  
 
   //   WilsonLoops<Gmpl>::FieldStrength(Bx, Umu, Zdir, Ydir);
   WilsonLoops<PeriodicGimplR>::FieldStrength(Bx, Umu, Zdir, Ydir);
-
+  WilsonLoops<PeriodicGimplR>::FieldStrength(By, Umu, Zdir, Xdir);
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Bz, Umu, Ydir, Xdir);
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Ex, Umu, Tdir, Xdir);
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Ey, Umu, Tdir, Ydir);
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Ez, Umu, Tdir, Zdir);
 
 
   // End of the Grid
