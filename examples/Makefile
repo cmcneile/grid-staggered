@@ -25,13 +25,12 @@ LDFLAGS=$(shell $(config) --ldflags)
 LIBS= $(shell $(config) --libs) -L$(gridinstall)/lib  -lGrid
 COMPILER=$(shell $(config) --cxx)
 
-# other libraries from SciDac
-
-
-
 
 cg.x: compute_staggered_pion.cc
 	$(COMPILER) -g -o $@ $(CXXFLASGS)  compute_staggered_pion.cc   $(LDFLAGS) $(LIBS) 
+
+io.x: dump_gauge_field.cc
+	$(COMPILER) -g -o $@ $(CXXFLASGS) dump_gauge_field.cc   $(LDFLAGS) $(LIBS) 
 
 
 
