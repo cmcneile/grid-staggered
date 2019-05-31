@@ -11,3 +11,7 @@
 *.vrb
 develop
 readne_git
+*.bst
+*.bbl
+*.blg
+*.x
