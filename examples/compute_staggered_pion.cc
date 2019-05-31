@@ -118,6 +118,21 @@ int main (int argc, char ** argv)
   //  SU3::HotConfiguration(pRNG,Umu);
   SU3::ColdConfiguration(Umu); // Umu = 1  
 
+
+  // read configuration in (Test_ildg_io.cc)
+  FieldMetaData header;
+
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  emptyUserRecord record;
+  std::string file("./ckpoint_ildg.4000");
+
+  IldgReader _IldgReader;
+  _IldgReader.open(file);
+  _IldgReader.readConfiguration(Umu,header);
+  _IldgReader.close();
+
   int t_dir = 3;
   int nt =latt_size[t_dir];
 
