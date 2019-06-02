@@ -114,10 +114,19 @@ int main (int argc, char ** argv)
   
    LatticeGaugeField Umu(&Grid); 
 
-   //  create a hot su3 configuration
-  //  SU3::HotConfiguration(pRNG,Umu);
-  SU3::ColdConfiguration(Umu); // Umu = 1  
+   // https://stackoverflow.com/questions/12183008/how-to-use-enums-in-c
+   enum cfgStart  { Cold, Hot, Load } ;
+   cfgStart cfg_start = Hot ;
 
+
+   if ( cfg_start  == Hot ) {
+     std::cout << "Hot configuration loaded\n";
+     SU3::HotConfiguration(pRNG,Umu);
+   }
+   else if ( cfg_start  == Cold ) {
+     std::cout << "Cold configuration loaded\n";
+    SU3::ColdConfiguration(Umu); // Umu = 1  
+   }
 
   // read configuration in (Test_ildg_io.cc)
   FieldMetaData header;
@@ -132,6 +141,7 @@ int main (int argc, char ** argv)
   _IldgReader.open(file);
   _IldgReader.readConfiguration(Umu,header);
   _IldgReader.close();
+
 
   int t_dir = 3;
   int nt =latt_size[t_dir];
