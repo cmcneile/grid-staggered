@@ -26,7 +26,7 @@ LIBS= $(shell $(config) --libs) -L$(gridinstall)/lib  -lGrid
 COMPILER=$(shell $(config) --cxx)
 
 
-cg.x: compute_staggered_pion.cc meson_routines.cc
+cg.x: compute_staggered_pion.cc meson_routines.cc staggeredInclude.h
 	$(COMPILER) -g -o $@ $(CXXFLASGS)  compute_staggered_pion.cc meson_routines.cc  $(LDFLAGS) $(LIBS) 
 
 io.x: dump_gauge_field.cc

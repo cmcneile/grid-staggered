@@ -121,27 +121,34 @@ int main (int argc, char ** argv)
 
 
    if ( cfg_start  == Hot ) {
-     std::cout << "Hot configuration loaded\n";
+     std::cout << "Hot configuration created\n";
      SU3::HotConfiguration(pRNG,Umu);
    }
    else if ( cfg_start  == Cold ) {
-     std::cout << "Cold configuration loaded\n";
+     std::cout << "Cold configuration created\n";
     SU3::ColdConfiguration(Umu); // Umu = 1  
    }
-
-  // read configuration in (Test_ildg_io.cc)
-  FieldMetaData header;
-
-  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
-  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  emptyUserRecord record;
-  std::string file("./ckpoint_ildg.4000");
-
-  IldgReader _IldgReader;
-  _IldgReader.open(file);
-  _IldgReader.readConfiguration(Umu,header);
-  _IldgReader.close();
+   else if ( cfg_start  == Load ) {
+     std::cout << "Loading the configuration from disk\n";
+     // read configuration in (Test_ildg_io.cc)
+     FieldMetaData header;
+     
+     std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+     std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+     std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+     emptyUserRecord record;
+     std::string file("./ckpoint_ildg.4000");
+     
+     IldgReader _IldgReader;
+     _IldgReader.open(file);
+     _IldgReader.readConfiguration(Umu,header);
+     _IldgReader.close();
+   }
+   else
+     {
+       cout << "ERROR cfg_start = " << cfg_start << "\n" ;
+       exit(1) ;
+     }
 
 
   int t_dir = 3;
@@ -185,88 +192,7 @@ int main (int argc, char ** argv)
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
 
 
-  //  ./Grid/qcd/QCD.h
-  LatticeStaggeredFermion local_src(&Grid) ;
-  LatticeStaggeredFermion out(&Grid) ;
-  LatticeStaggeredPropagator Qprop(&Grid)  ;
-
-  LatticeStaggeredFermion D_out(&Grid) ;
-  LatticeStaggeredFermion res(&Grid) ;
-  LatticeStaggeredFermion tmp(&Grid) ;
-
-  Qprop = zero ;
-
-  cout << "Inversion for mass "   << mass << endl ; 
-
-  // Compute the staggered quark propator
-  // Solve for x 
-  // M^dagger * M * x = M^dagger * src
-
-  for(int ic = 0 ; ic < 3 ; ++ic)
-    {
-      cout << "---------------------------------------------" << endl ; 
-      cout << "Inversion for colour " << ic << endl ; 
-      cout << "---------------------------------------------" << endl ; 
-
-      // create point source
-
-      // ideas from tests/core/Test_staggered5Dvec.cc
-      std::vector<int> site({0,0,0,0});
-      ColourVector cv = zero;
-      cv()()(ic)=1.0;
-      local_src = zero;
-      pokeSite(cv,local_src,site);
-
-      // apply Mdagg
-      Ds.Mdag(local_src, out) ;
-      local_src = out ;
-
-      // invert 
-       out = zero ;  // intial guess
-
-      CG(HermOp,local_src,out);
-
-      // add solution to propagator structure
-      FermToProp_s(Qprop, out , ic  ) ; 
-
-      // compute the residual
-       Ds.M(out, D_out) ;
-       Ds.Mdag(D_out, tmp) ;
-       D_out = tmp ; 
-
-       res = D_out - local_src ;
-       RealD nrm = norm2(res); 
-       double xxx = (double) nrm*1.0 ;
-       cout << "Residual = " <<  std::sqrt(xxx)  << endl ; 
-
-    }
-
-  // 
-  //  -----  Use the quark propagator to compute the pion correlator
-  //
-
-  // pion correlator
-  std::vector<TComplex> corr(nt)  ;
-
-  // contract the quark propagators
-  LatticeComplex  c(&Grid)  ;
-
-   c = trace(Qprop * adj(Qprop)) ; 
-
-  //  The correlator over the lattice is summed over the spatial
-  //   lattice at each timeslice t.
-  cout << "Tp = " << Tp  << endl; 
-  sliceSum(c, corr, Tp);
-
-  // output the correlators
-  cout << "Pseuodscalar Goldstone pion \n" ;
-  for(int tt = 0 ; tt < nt ; ++tt)
-    {
-      double ttt = real(corr[tt]) ;
-      cout << tt << " "  <<  ttt  << endl ;
-    }
-
-
+  // compute the meson spectrum
   compute_local_mesons(Grid, HermOp, CG, Ds, nt, Tp );  
 
   //
