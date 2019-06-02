@@ -219,7 +219,9 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
   // output the correlators
   cout << "\n\nSHIFTED rho meson \n\n";
 
-  for(int m=0; m<3; m++) {
+  int kmax = 1 ;
+
+  for(int m=0; m<kmax; m++) {
     cout << "\nCorrelator in spin component " << m << endl; 
     for(int tt = 0 ; tt < nt ; ++tt) {
       

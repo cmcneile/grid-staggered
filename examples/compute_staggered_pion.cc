@@ -52,17 +52,7 @@ using namespace Grid::QCD;
 //////////////////////////////////////////////
 
 void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & psi , const int c) ;
-#if 0
-{
-  const int nc = 3 ;  // later use the dimension 
 
-  for(int i = 0; i < nc ; ++i)
-    {
-      pokeColour(Qprop, peekColour(psi, i), i, c);
-    }
-
-}
-#endif
 
 //////////////////////////////////////////////////
 //  Apply anti-peroidic boundary conditions in time
@@ -156,8 +146,10 @@ int main (int argc, char ** argv)
 
   anti_peroidic( Umu , nt ) ;
 
-  const int g_trans =  0;
-  if( g_trans == 1)
+  enum gtrans_options  { do_trans , no_trans } ;
+  gtrans_options g_trans  = do_trans ;
+
+  if( g_trans == do_trans )
     {
       LatticeColourMatrix   g(&Grid); // Gauge xform
       SU3::RandomGaugeTransform(pRNG,Umu,g); // Unit gauge
