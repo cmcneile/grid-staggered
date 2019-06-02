@@ -44,6 +44,8 @@ using namespace std;
 using namespace Grid;
 using namespace Grid::QCD;
 
+#include"staggeredInclude.h"
+
 
 //////////////////////////////////////////////
 // Load Fermion vector into propagator 
@@ -92,9 +94,6 @@ void anti_peroidic( LatticeGaugeField & Umu , int nt)
 
 int main (int argc, char ** argv)
 {
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
 
   Grid_init(&argc,&argv);
 
