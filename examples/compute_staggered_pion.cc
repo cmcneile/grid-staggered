@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
 
    // https://stackoverflow.com/questions/12183008/how-to-use-enums-in-c
    enum cfgStart  { Cold, Hot, Load } ;
-   cfgStart cfg_start = Hot ;
+   cfgStart cfg_start = Load ;
 
 
    if ( cfg_start  == Hot ) {
@@ -194,6 +194,9 @@ int main (int argc, char ** argv)
 
   // compute the meson spectrum
   compute_local_mesons(Grid, HermOp, CG, Ds, nt, Tp );  
+
+  compute_onelink_rho(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
+
 
   //
   //  field strength tensor
