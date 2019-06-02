@@ -266,6 +266,9 @@ int main (int argc, char ** argv)
       cout << tt << " "  <<  ttt  << endl ;
     }
 
+
+  compute_local_mesons(Grid, HermOp, CG, Ds, nt, Tp );  
+
   //
   //  field strength tensor
   //  from Grid/qcd/action/fermion/WilsonCloverFermion.cc

@@ -23,12 +23,6 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 }
 
 
-#if 0
-  typedef typename ImprovedStaggeredFermionR::FermionField FermionField; 
-  typedef typename ImprovedStaggeredFermionR::ComplexField ComplexField; 
-  typename ImprovedStaggeredFermionR::ImplParams params; 
-#endif
-
 void compute_local_mesons(GridCartesian & Grid,   
 			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
 			  ConjugateGradient<FermionField> & CG , 
