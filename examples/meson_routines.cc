@@ -145,10 +145,13 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
     LatticeCoordinate(coor[m], m);  
   }
 
-  r = coor[0] + coor[1] + coor[2] + coor[3];
+   r = coor[0] + coor[1] + coor[2] + coor[3];
+  //  r = coor[0] + coor[1] + coor[2] ;
 
-    phases = where((mod(r,2)== (Integer) 0), minusOne, one);
+  //  phases = (-1)**(x+y+z+t)
+  phases = where((mod(r,2)== (Integer) 0), one, minusOne);
   
+  //    cout << phases << "\n" ;
 
 //////////////////////////////////////////////////////////////
 
@@ -160,6 +163,7 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
   LatticeStaggeredPropagator Qprop[2] = {&Grid, &Grid}  ;
 
   Qprop[1] = Qprop[0] = zero ;
+  const int x_dir = 0 ;  // x-direction
 
   // Compute the staggered quark propagators
   for(int k=0; k<2; k++) {
@@ -180,7 +184,7 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
         pokeSite(cv,local_src,site);
       
         // shift the source
-        if(k) symm_shift(Umu, local_src, 0, 1); // do the unshifted qprop first
+        if(k) symm_shift(Umu, local_src, x_dir , 1); // do the unshifted qprop first
 
         Ds.Mdag(local_src, out) ; // apply Mdagger
         local_src = out;
@@ -220,9 +224,10 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
   cout << "\n\nSHIFTED rho meson \n\n";
 
   int kmax = 1 ;
+  string dir_name[4] = {"X", "Y", "Z", "T"}; 
 
   for(int m=0; m<kmax; m++) {
-    cout << "\nCorrelator in spin component " << m << endl; 
+    cout << "\nCorrelator in spin component " << dir_name[m]  << endl; 
     for(int tt = 0 ; tt < nt ; ++tt) {
       
         double ttt = real(corr[m][tt]) ;
