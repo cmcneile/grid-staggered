@@ -19,3 +19,12 @@ void compute_local_mesons(GridCartesian & Grid,
 			  int nt, int Tp) ;
 
 
+
+void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+			 int nt, int Tp) ;
+
+
+
