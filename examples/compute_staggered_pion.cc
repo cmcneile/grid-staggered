@@ -49,7 +49,8 @@ using namespace Grid::QCD;
 // Load Fermion vector into propagator 
 //////////////////////////////////////////////
 
-void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & psi , const int c)
+void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & psi , const int c) ;
+#if 0
 {
   const int nc = 3 ;  // later use the dimension 
 
@@ -59,6 +60,7 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
     }
 
 }
+#endif
 
 //////////////////////////////////////////////////
 //  Apply anti-peroidic boundary conditions in time
@@ -284,3 +286,8 @@ int main (int argc, char ** argv)
   // End of the Grid
   Grid_finalize();
 }
+
+
+
+
+
