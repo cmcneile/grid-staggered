@@ -91,9 +91,17 @@ LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion
   const int shift = 1 ;
 
 
-  if(dir==0) { i=1; j=2;} 
-  if(dir==1) {i=2; j=0;} 
-  if(dir==2) {i=0; j=1;}
+  if(dir==0) 
+    { i=1; j=2;} 
+  else if(dir==1) 
+    {i=2; j=0;} 
+  else if(dir==2) 
+    {i=0; j=1;}
+  else
+    {
+      cout << "hybrid_op:: Error dir = " << dir << " out of range\n" ;
+      exit(0) ;
+    }
 
   // will need another conditional to ensure dir < i, dir < j.
   WilsonLoops<PeriodicGimplR>::FieldStrength(Bi, Umu, j, dir); 
