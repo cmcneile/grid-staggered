@@ -27,4 +27,11 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
 			 int nt, int Tp) ;
 
 
+void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+			  int nt, int Tp) ;
+
+
 

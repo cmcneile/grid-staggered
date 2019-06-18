@@ -29,7 +29,7 @@ void symm_shift_b(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, i
   LatticeColourMatrix U(grid);
   U = peekLorentz(Umu, dir);
 
-  q =  0.5 * Cshift(q, dir, shift) +  Cshift(q, dir, -shift) ;
+  q =  0.5 * Cshift(q, dir, shift) +  0.5 *Cshift(q, dir, -shift) ;
 
 }
 
@@ -40,9 +40,21 @@ void symm_shift_a(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, i
   LatticeColourMatrix U(grid);
   U = peekLorentz(Umu, dir);
 
-  q =  0.5 * U * Cshift(q, dir, shift) + adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift) ;
+  q =  0.5 * U * Cshift(q, dir, shift) + 0.5 * adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift) ;
 
 }
+
+
+LatticeStaggeredFermion symm_shift_n(LatticeGaugeField &Umu, LatticeStaggeredFermion q, int dir, int shift)
+{
+  GridBase *grid = Umu._grid;
+  LatticeColourMatrix U(grid);
+  U = peekLorentz(Umu, dir);
+  LatticeStaggeredFermion tmp(grid);
+  tmp = 0.5 * (U * Cshift(q, dir, shift) + adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift)) ;
+  return tmp;
+}
+
 
 
 void symm_shift(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int shift)
@@ -64,6 +76,35 @@ void symm_shift_c(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, i
   q =  U * Cshift(q, dir, shift) ;
 
 }
+
+/**
+   1-+ hybrid staggered operator.
+
+ **/
+
+LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion q, LatticeComplex *signs,
+                                  int dir, int shift)
+{
+  GridBase *grid = Umu._grid;
+  LatticeColourMatrix Bi(grid); LatticeColourMatrix Bj(grid);
+  int i, j;
+
+  if(dir==0) { i=1; j=2;} 
+  if(dir==1) {i=2; j=0;} 
+  if(dir==2) {i=0; j=1;}
+
+  // will need another conditional to ensure dir < i, dir < j.
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Bi, Umu, j, dir); 
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Bj, Umu, i, dir); 
+
+  LatticeStaggeredFermion tmp(grid);
+
+  tmp = signs[i]*symm_shift_n(Umu, Bj*q , i, shift) + Bj*signs[i]*symm_shift_n(Umu, q, i, shift)
+    - signs[j]*symm_shift_n(Umu, Bi*q, j, shift)  - Bi*signs[j]*symm_shift_n(Umu, q, j, shift); 
+  // generalise this and/or make it more compact 
+  return tmp;
+}
+
 
 
 void compute_local_mesons(GridCartesian & Grid,   
@@ -155,6 +196,11 @@ void compute_local_mesons(GridCartesian & Grid,
 }
 
 
+/*****
+
+  Flavour singlet one link rho operator.
+
+ ***/
 
 void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,   
 			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
@@ -202,10 +248,6 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
   phases = where((mod(r,2)== (Integer) 0), one, minusOne);
 
 
-#if 0      
-  int ntL = nt -1 ;
-  phases = where( tL ==(Integer)ntL, phases,-phases);
-#endif
 
   //    cout << phases << "\n" ;
 
@@ -280,10 +322,7 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
   // output the correlators
   cout << "\n\nSHIFTED rho meson \n\n";
 
-  int kmax = 1 ;
   string dir_name[4] = {"X", "Y", "Z", "T"}; 
-
-  //  for(int m=0; m<kmax; m++) {
 
   { int m = shift_dir ;
     cout << "\nCorrelator in spin component " << dir_name[m]  << endl; 
@@ -297,3 +336,152 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
 
 
 }
+
+
+
+
+
+
+/*****
+
+  1-+ hybrid operator
+
+ ***/
+
+void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+			  int nt, int Tp)
+{
+
+
+
+///////////////////////////////////////////////////////////////
+//		Staggered Phases
+///////////////////////////////////////////////////////////////
+
+  LatticeComplex phases(&Grid); 
+  //  LatticeComplex one(&Grid), minusOne(&Grid); one = 1; minusOne = -1;
+  // LatticeInteger coor[4] = {&Grid, &Grid, &Grid, &Grid}; LatticeInteger r(&Grid);
+
+  //  for(int m=0; m<4; m++) {
+  //  LatticeCoordinate(coor[m], m);  
+  //  }
+
+  const int XUP = 0 ;
+  const int YUP = 1 ;
+  const int ZUP = 2 ;
+  const int TUP = 3 ;
+
+
+///////////////////////////////////////////////////////////////
+//		Staggered Sign Functions
+///////////////////////////////////////////////////////////////
+
+  LatticeInteger coor[4] = {&Grid, &Grid, &Grid, &Grid}; 
+  LatticeInteger n[5] = {&Grid, &Grid, &Grid, &Grid, &Grid};
+  LatticeComplex signs[5] =  {&Grid, &Grid, &Grid, &Grid, &Grid}; 
+  LatticeComplex One(&Grid), minusOne(&Grid); One = 1; minusOne = -1;
+
+  for(int m=0; m<4; m++) {
+    LatticeCoordinate(coor[m], m);  
+  }
+
+  n[0] = 1; n[1] = coor[0]; n[2] = n[1] + coor[1]; n[3] = n[2] + coor[2];
+  n[4] = n[3] + coor[3];
+  
+  for(int i=0; i<5; i++) {
+    signs[i] = where((mod(n[i],2)== (Integer) 1), minusOne, One) ;
+  } 
+
+// Decided to split the phases up a bit, here are the standard staggered sign functions, corresponding
+// to the gamma matrices. the phase from the inversion of M is signs[4].
+
+  enum dirs {x=0, y=1, z=2, t=3};
+  dirs dir = x; // just a bit more readable
+
+
+
+//////////////////////////////////////////////////////////////
+
+
+
+  //  ./Grid/qcd/QCD.h
+  LatticeStaggeredFermion local_src(&Grid) ;
+  LatticeStaggeredFermion out(&Grid) ;
+  LatticeStaggeredPropagator Qprop[2] = {&Grid, &Grid}  ;
+
+  Qprop[1] = Qprop[0] = zero ;
+  const int shift_dir = 2 ;  // x-direction  debug z-direction
+
+  // Compute the staggered quark propagators
+  for(int k=0; k<2; k++) {
+
+    for(int ic = 0 ; ic < 3 ; ++ic)
+      {
+        cout << "---------------------------------------------" << endl ; 
+        cout << "Inversion for colour " << ic << endl ; 
+        cout << "---------------------------------------------" << endl ; 
+
+        // create point source
+        // tests/core/Test_staggered5Dvec.cc
+      
+        std::vector<int> site({0,0,0,0});
+        ColourVector cv = zero;
+        cv()()(ic)=1.0;  
+        local_src = zero;
+        pokeSite(cv,local_src,site);
+      
+        // shift the source
+        if(k) local_src = hybrid_op(Umu, local_src, signs, x, 1); // do the unshifted qprop first
+
+        Ds.Mdag(local_src, out) ; // apply Mdagger
+        local_src = out;
+
+        // invert 
+        out = zero ;  // intial guess
+        CG(HermOp,local_src,out);
+
+        // apply the shifted operator to the sink
+	if(k) out = hybrid_op(Umu, out, signs, x, 1);
+
+        // add solution to propagator structure
+        FermToProp_s(Qprop[k], out , ic  ) ; 
+      }
+  }
+  //  -----  Use the quark propagator to compute the correlator
+
+  // 1-link rho correlator
+   std::vector<TComplex> corr(nt) ;
+
+  // contract the quark propagators
+  LatticeComplex  c(&Grid);
+
+  for(int j=0; j<3; j++) {
+    c = trace(adj(Qprop[0]) * Qprop[1]) ; 
+    c = c * signs[4];	// phase from inversion of M (aka epsilon)
+  }
+
+  //  this correlator over the lattice is summed over the spatial
+  //   lattice at each timeslice t.
+  cout << "\nTp = " << Tp  << "\n"; 
+  sliceSum(c, corr, Tp);
+
+
+  // output the correlators
+  cout << "\n\nSHIFTED Hybrid 1-+ \n\n";
+
+    for(int tt = 0 ; tt < nt ; ++tt) {
+           double ttt = real(corr[tt]) ;
+        double ttt_img = imag(corr[tt]) ;
+        cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
+    }
+  
+
+
+}
+
+
+
+

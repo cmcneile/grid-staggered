@@ -189,6 +189,7 @@ int main (int argc, char ** argv)
 
   compute_onelink_rho(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
 
+  compute_onemp_hybrid(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
 
   //
   //  field strength tensor
