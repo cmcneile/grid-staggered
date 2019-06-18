@@ -23,27 +23,6 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 }
 
 
-void symm_shift_b(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int shift)
-{
-  GridBase *grid = Umu._grid;
-  LatticeColourMatrix U(grid);
-  U = peekLorentz(Umu, dir);
-
-  q =  0.5 * Cshift(q, dir, shift) +  0.5 *Cshift(q, dir, -shift) ;
-
-}
-
-
-void symm_shift_a(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int shift)
-{
-  GridBase *grid = Umu._grid;
-  LatticeColourMatrix U(grid);
-  U = peekLorentz(Umu, dir);
-
-  q =  0.5 * U * Cshift(q, dir, shift) + 0.5 * adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift) ;
-
-}
-
 
 LatticeStaggeredFermion symm_shift_n(LatticeGaugeField &Umu, LatticeStaggeredFermion q, int dir, int shift)
 {
@@ -64,16 +43,6 @@ void symm_shift(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int
   U = peekLorentz(Umu, dir);
 
   q =  0.5 * U * Cshift(q, dir, shift) + 0.5 *adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift) ;
-
-}
-
-void symm_shift_c(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int shift)
-{
-  GridBase *grid = Umu._grid;
-  LatticeColourMatrix U(grid);
-  U = peekLorentz(Umu, dir);
-
-  q =  U * Cshift(q, dir, shift) ;
 
 }
 
@@ -397,7 +366,6 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 //////////////////////////////////////////////////////////////
 
 
-
   //  ./Grid/qcd/QCD.h
   LatticeStaggeredFermion local_src(&Grid) ;
   LatticeStaggeredFermion out(&Grid) ;
@@ -406,38 +374,40 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   Qprop[1] = Qprop[0] = zero ;
 
   // Compute the staggered quark propagators
-  for(int k=0; k<2; k++) {
+  for(int k=0; k<2; k++) 
+    {
 
-    for(int ic = 0 ; ic < 3 ; ++ic)
-      {
-        cout << "---------------------------------------------" << endl ; 
-        cout << "Inversion for colour " << ic << endl ; 
-        cout << "---------------------------------------------" << endl ; 
+      for(int ic = 0 ; ic < 3 ; ++ic)
+	{
+	  cout << "---------------------------------------------" << endl ; 
+	  cout << "Inversion for colour " << ic << endl ; 
+	  cout << "---------------------------------------------" << endl ; 
 
-        // create point source
-        std::vector<int> site({0,0,0,0});
-        ColourVector cv = zero;
-        cv()()(ic)=1.0;  
-        local_src = zero;
-        pokeSite(cv,local_src,site);
-      
-        // shift the source
-        if(k) local_src = hybrid_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
+	  // create point source
+	  std::vector<int> site({0,0,0,0});
+	  ColourVector cv = zero;
+	  cv()()(ic)=1.0;  
+	  local_src = zero;
+	  pokeSite(cv,local_src,site);
+	  
+	  // shift the source
+	  if(k) local_src = hybrid_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
+	  
+	  Ds.Mdag(local_src, out) ; // apply Mdagger
+	  local_src = out;
 
-        Ds.Mdag(local_src, out) ; // apply Mdagger
-        local_src = out;
+	  // invert 
+	  out = zero ;  // intial guess
+	  CG(HermOp,local_src,out);
 
-        // invert 
-        out = zero ;  // intial guess
-        CG(HermOp,local_src,out);
+	  // apply the shifted operator to the sink
+	  if(k) out = hybrid_op(Umu, out, signs, shift_dir);
 
-        // apply the shifted operator to the sink
-	if(k) out = hybrid_op(Umu, out, signs, shift_dir);
+	  // add solution to propagator structure
+	  FermToProp_s(Qprop[k], out , ic  ) ; 
+	}
+    }
 
-        // add solution to propagator structure
-        FermToProp_s(Qprop[k], out , ic  ) ; 
-      }
-  }
   //  -----  Use the quark propagator to compute the correlator
 
   // correlator
@@ -461,11 +431,11 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   // output the correlators
   cout << "\n\nSHIFTED Hybrid 1-+ dir= " << dir_name[shift_dir]  << "\n";
 
-    for(int tt = 0 ; tt < nt ; ++tt) {
-           double ttt = real(corr[tt]) ;
-        double ttt_img = imag(corr[tt]) ;
-        cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
-    }
+  for(int tt = 0 ; tt < nt ; ++tt) {
+    double ttt = real(corr[tt]) ;
+    double ttt_img = imag(corr[tt]) ;
+    cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
+  }
   
 
 
