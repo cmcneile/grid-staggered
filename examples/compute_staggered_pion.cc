@@ -147,7 +147,7 @@ int main (int argc, char ** argv)
   anti_peroidic( Umu , nt ) ;
 
   enum gtrans_options  { do_trans , no_trans } ;
-  gtrans_options g_trans  = do_trans ;
+  gtrans_options g_trans  = no_trans ;
 
   if( g_trans == do_trans )
     {

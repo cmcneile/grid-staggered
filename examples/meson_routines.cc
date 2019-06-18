@@ -83,11 +83,13 @@ void symm_shift_c(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, i
  **/
 
 LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion q, LatticeComplex *signs,
-                                  int dir, int shift)
+                                  int dir)
 {
   GridBase *grid = Umu._grid;
   LatticeColourMatrix Bi(grid); LatticeColourMatrix Bj(grid);
   int i, j;
+  const int shift = 1 ;
+
 
   if(dir==0) { i=1; j=2;} 
   if(dir==1) {i=2; j=0;} 
@@ -355,26 +357,6 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 			  int nt, int Tp)
 {
 
-
-
-///////////////////////////////////////////////////////////////
-//		Staggered Phases
-///////////////////////////////////////////////////////////////
-
-  LatticeComplex phases(&Grid); 
-  //  LatticeComplex one(&Grid), minusOne(&Grid); one = 1; minusOne = -1;
-  // LatticeInteger coor[4] = {&Grid, &Grid, &Grid, &Grid}; LatticeInteger r(&Grid);
-
-  //  for(int m=0; m<4; m++) {
-  //  LatticeCoordinate(coor[m], m);  
-  //  }
-
-  const int XUP = 0 ;
-  const int YUP = 1 ;
-  const int ZUP = 2 ;
-  const int TUP = 3 ;
-
-
 ///////////////////////////////////////////////////////////////
 //		Staggered Sign Functions
 ///////////////////////////////////////////////////////////////
@@ -388,7 +370,10 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
     LatticeCoordinate(coor[m], m);  
   }
 
-  n[0] = 1; n[1] = coor[0]; n[2] = n[1] + coor[1]; n[3] = n[2] + coor[2];
+  n[0] = 1; 
+  n[1] = coor[0]; 
+  n[2] = n[1] + coor[1]; 
+  n[3] = n[2] + coor[2];
   n[4] = n[3] + coor[3];
   
   for(int i=0; i<5; i++) {
@@ -398,10 +383,8 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 // Decided to split the phases up a bit, here are the standard staggered sign functions, corresponding
 // to the gamma matrices. the phase from the inversion of M is signs[4].
 
-  enum dirs {x=0, y=1, z=2, t=3};
-  dirs dir = x; // just a bit more readable
-
-
+  enum dirs {XUP=0, YUP=1, ZUP=2, TUP=3};
+  dirs shift_dir = XUP ; // index of hybrid operator
 
 //////////////////////////////////////////////////////////////
 
@@ -413,7 +396,6 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   LatticeStaggeredPropagator Qprop[2] = {&Grid, &Grid}  ;
 
   Qprop[1] = Qprop[0] = zero ;
-  const int shift_dir = 2 ;  // x-direction  debug z-direction
 
   // Compute the staggered quark propagators
   for(int k=0; k<2; k++) {
@@ -425,8 +407,6 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
         cout << "---------------------------------------------" << endl ; 
 
         // create point source
-        // tests/core/Test_staggered5Dvec.cc
-      
         std::vector<int> site({0,0,0,0});
         ColourVector cv = zero;
         cv()()(ic)=1.0;  
@@ -434,7 +414,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
         pokeSite(cv,local_src,site);
       
         // shift the source
-        if(k) local_src = hybrid_op(Umu, local_src, signs, x, 1); // do the unshifted qprop first
+        if(k) local_src = hybrid_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
 
         Ds.Mdag(local_src, out) ; // apply Mdagger
         local_src = out;
@@ -444,7 +424,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
         CG(HermOp,local_src,out);
 
         // apply the shifted operator to the sink
-	if(k) out = hybrid_op(Umu, out, signs, x, 1);
+	if(k) out = hybrid_op(Umu, out, signs, shift_dir);
 
         // add solution to propagator structure
         FermToProp_s(Qprop[k], out , ic  ) ; 
@@ -452,7 +432,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   }
   //  -----  Use the quark propagator to compute the correlator
 
-  // 1-link rho correlator
+  // correlator
    std::vector<TComplex> corr(nt) ;
 
   // contract the quark propagators
@@ -465,12 +445,13 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 
   //  this correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
-  cout << "\nTp = " << Tp  << "\n"; 
+  //  cout << "\nTp = " << Tp  << "\n"; 
   sliceSum(c, corr, Tp);
 
+  string dir_name[4] = {"X", "Y", "Z", "T"}; 
 
   // output the correlators
-  cout << "\n\nSHIFTED Hybrid 1-+ \n\n";
+  cout << "\n\nSHIFTED Hybrid 1-+ dir= " << dir_name[shift_dir]  << "\n";
 
     for(int tt = 0 ; tt < nt ; ++tt) {
            double ttt = real(corr[tt]) ;
