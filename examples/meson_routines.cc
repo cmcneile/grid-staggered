@@ -24,10 +24,13 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 
 
 
-LatticeStaggeredFermion symm_shift_n(LatticeGaugeField &Umu, LatticeStaggeredFermion q, int dir, int shift)
+LatticeStaggeredFermion symm_shift_n(LatticeGaugeField &Umu, LatticeStaggeredFermion q, int dir)
 {
   GridBase *grid = Umu._grid;
   LatticeColourMatrix U(grid);
+  const int shift = 1 ;
+
+
   U = peekLorentz(Umu, dir);
   LatticeStaggeredFermion tmp(grid);
   tmp = 0.5 * (U * Cshift(q, dir, shift) + adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift)) ;
@@ -43,6 +46,22 @@ void symm_shift(LatticeGaugeField &Umu, LatticeStaggeredFermion &q, int dir, int
   U = peekLorentz(Umu, dir);
 
   q =  0.5 * U * Cshift(q, dir, shift) + 0.5 *adj(Cshift(U, dir, -shift))*Cshift(q, dir, -shift) ;
+
+}
+
+/**
+   Remove the trace from a colour matrix.
+ **/
+void make_traceless(LatticeColourMatrix & B)
+{
+  GridBase *grid = B._grid;
+ LatticeColourMatrix  con(grid);
+ con = 1/3.0 ;
+
+  LatticeComplex  tt(grid);
+  tt = trace(B) ; 
+ 
+  B -= tt * con ;
 
 }
 
@@ -72,15 +91,59 @@ LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion
       exit(0) ;
     }
 
-  // will need another conditional to ensure dir < i, dir < j.
+  // compute the field strength tensor
   WilsonLoops<PeriodicGimplR>::FieldStrength(Bi, Umu, j, dir); 
   WilsonLoops<PeriodicGimplR>::FieldStrength(Bj, Umu, i, dir); 
 
+  make_traceless(Bi) ;
+  make_traceless(Bj) ;
+
   LatticeStaggeredFermion tmp(grid);
 
+#if 0
+  // debug - debug -debug 
+  LatticeComplex  debug(grid);
+  debug = trace(Bi) ; 
+  cout << "trace(Bi) =  " << debug << "\n" ; 
+
+
+  LatticeColourMatrix  one(grid);
+  one = 1/3.0 ;
+  cout << "One = " << one << "\n" ; 
+
+  //  debug /= 3.0 ; 
+
+  LatticeColourMatrix Bi_t(grid);
+  Bi_t = Bi - one * debug  ;
+
+  debug = trace(Bi_t) ; 
+  cout << "trace(Bi_t) =  " << debug << "\n" ; 
+#endif
+
+  // debug - debug - debug 
+
+  double milc_nrm = 8.0 ; 
+#if 0
   tmp = signs[i]*symm_shift_n(Umu, Bj*q , i, shift) + Bj*signs[i]*symm_shift_n(Umu, q, i, shift)
     - signs[j]*symm_shift_n(Umu, Bi*q, j, shift)  - Bi*signs[j]*symm_shift_n(Umu, q, j, shift); 
-  // generalise this and/or make it more compact 
+#endif
+  tmp = symm_shift_n(Umu, Bj*q ,i) + Bj*symm_shift_n(Umu, q, i)
+    +   symm_shift_n(Umu, Bi*q, j) + Bi*symm_shift_n(Umu, q, j); 
+
+  // Field strength in Grid devides by a factor of 8, but the MILC code does not
+  tmp *= milc_nrm ; 
+
+  //  tmp = Bj*signs[i]*symm_shift_n(Umu, q, i, shift) - Bi*signs[j]*symm_shift_n(Umu, q, j, shift);  
+
+  // take out phases
+  //    tmp = Bj*symm_shift_n(Umu, q, i) + Bi*symm_shift_n(Umu, q, j);  
+
+
+  // tmp = milc_nrm * Bj*q + milc_nrm*Bi*q ;
+  // tmp = Bi*symm_shift_n(Umu, q, i) + Bj*symm_shift_n(Umu, q, j);  
+
+  //tmp = symm_shift_n(Umu, q, i) + symm_shift_n(Umu, q, j);  
+
   return tmp;
 }
 
@@ -361,7 +424,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 // to the gamma matrices. the phase from the inversion of M is signs[4].
 
   enum dirs {XUP=0, YUP=1, ZUP=2, TUP=3};
-  dirs shift_dir = XUP ; // index of hybrid operator
+  dirs shift_dir = ZUP ; // index of hybrid operator
 
 //////////////////////////////////////////////////////////////
 
@@ -418,7 +481,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 
   for(int j=0; j<3; j++) {
     c = trace(adj(Qprop[0]) * Qprop[1]) ; 
-    c = c * signs[4];	// phase from inversion of M (aka epsilon)
+    //            c = c * signs[4];	// phase from inversion of M (aka epsilon)
   }
 
   //  this correlator over the lattice is summed over the spatial
@@ -431,11 +494,12 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   // output the correlators
   cout << "\n\nSHIFTED Hybrid 1-+ dir= " << dir_name[shift_dir]  << "\n";
 
-  for(int tt = 0 ; tt < nt ; ++tt) {
-    double ttt = real(corr[tt]) ;
-    double ttt_img = imag(corr[tt]) ;
-    cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
-  }
+  for(int tt = 0 ; tt < nt ; ++tt) 
+    {
+      double ttt      = real(corr[tt]) ;
+      double ttt_img  = imag(corr[tt]) ;
+      cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
+    }
   
 
 
