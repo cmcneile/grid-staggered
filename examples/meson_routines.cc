@@ -370,6 +370,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
     LatticeCoordinate(coor[m], m);  
   }
 
+  //  n[0] = 1; 
   n[0] = 1; 
   n[1] = coor[0]; 
   n[2] = n[1] + coor[1]; 
@@ -440,7 +441,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   LatticeComplex  c(&Grid);
 
   c = trace(adj(Qprop[0]) * Qprop[1]) ; 
-    //        c = c * signs[4];	// phase from inversion of M (aka epsilon)
+  c = c * signs[4];	// phase from inversion of M (aka epsilon)
     // This should be in, but it gets almost MILC correlators.
 
 
@@ -454,10 +455,12 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
   // output the correlators
   cout << "\n\nSHIFTED Hybrid 1-+ dir= " << dir_name[shift_dir]  << "\n";
 
+  const double sss = -1 ;
   for(int tt = 0 ; tt < nt ; ++tt) 
     {
-      double ttt      = real(corr[tt]) ;
-      double ttt_img  = imag(corr[tt]) ;
+      double ttt      = sss*real(corr[tt]) ;
+      double ttt_img  = sss*imag(corr[tt]) ;
+
       cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
     }
   
