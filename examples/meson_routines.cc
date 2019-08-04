@@ -245,21 +245,16 @@ void compute_local_mesons(GridCartesian & Grid,
   // pion correlator
   std::vector<TComplex> pion_corr(nt)  ;
   std::vector<TComplex> rho_corr(nt)  ;
+  std::vector<TComplex> rho_corr_av(nt)  ;
+
   std::vector<TComplex> a1_corr(nt)  ;
+  std::vector<TComplex> a1_corr_av(nt)  ;
 
   // contract the quark propagators
   LatticeComplex  c(&Grid)  ;
 
    c = trace(Qprop * adj(Qprop)) ; 
 
-#if 0
-  // contract the quark propagators
-  LatticeComplex  c_rho[3] = {&Grid, &Grid, &Grid};
-
-  for(int j=0; j<3; j++) {
-        c_rho[j] = c * rho_phases[j] ;	
-  }
-#endif
 
   //  The correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
@@ -274,6 +269,11 @@ void compute_local_mesons(GridCartesian & Grid,
       cout << "PION " << tt << " "  <<  ttt  << endl ;
     }
 
+
+  /**
+     Rho meson
+   **/
+
   LatticeComplex  c_rho(&Grid) ;
   cout << "Vector meson \n" ;
   for(int j=0; j<3; j++) 
@@ -284,15 +284,38 @@ void compute_local_mesons(GridCartesian & Grid,
 	{
 	  double ttt = real(rho_corr[tt]) ;
 	  cout << "RHO[" << j <<  "] " << tt << " "  <<  ttt  << endl ;
+	  rho_corr_av[tt]  += rho_corr[tt] ;
 	}
     }
+      for(int tt = 0 ; tt < nt ; ++tt)
+	{
+	  double ttt = real(rho_corr_av[tt]) ;
+	  cout << "RHO[av] " << tt << " "  <<  ttt  << endl ;
+	}
+
+      /***
+	  a1 meson
+       ***/
 
   cout << "A1 meson \n" ;
+  LatticeComplex  c_a1(&Grid) ;
+  for(int j=0; j<3; j++) 
+    {
+      c_a1= c * a1_phases[j] ;	
+      sliceSum(c_a1  , a1_corr, Tp);
+      for(int tt = 0 ; tt < nt ; ++tt)
+	{
+	  double ttt = real(a1_corr[tt]) ;
+	  cout << "A1[" << j <<  "] " << tt << " "  <<  ttt  << endl ;
+	  a1_corr_av[tt]  += a1_corr[tt] ;
+	}
+    }
   for(int tt = 0 ; tt < nt ; ++tt)
     {
-      double ttt = real(a1_corr[tt]) ;
-      cout << "A1 " << tt << " "  <<  ttt  << endl ;
+      double ttt = real(a1_corr_av[tt]) ;
+      cout << "A1[av] " << tt << " "  <<  ttt  << endl ;
     }
+
 
 
 
