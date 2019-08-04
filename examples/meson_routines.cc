@@ -127,6 +127,21 @@ void compute_local_mesons(GridCartesian & Grid,
   LatticeStaggeredFermion res(&Grid) ;
   LatticeStaggeredFermion tmp(&Grid) ;
 
+///////////////////////////////////////////////////////////////
+//		Staggered Phases
+///////////////////////////////////////////////////////////////
+
+  LatticeComplex phases[3] = {&Grid, &Grid, &Grid}; 
+  LatticeComplex one(&Grid), minusOne(&Grid); 
+  one = 1; 
+  minusOne = -1;
+
+  LatticeInteger coor(&Grid);
+  for(int i=0; i<3; i++) {
+    LatticeCoordinate(coor,i);	// fills coor with value of coord in i dir.
+    phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+  }
+
 
   for(int ic = 0 ; ic < 3 ; ++ic)
     {
@@ -181,6 +196,14 @@ void compute_local_mesons(GridCartesian & Grid,
 
    c = trace(Qprop * adj(Qprop)) ; 
 
+  // contract the quark propagators
+  LatticeComplex  c_rho[3] = {&Grid, &Grid, &Grid};
+
+  for(int j=0; j<3; j++) {
+        c_rho[j] = c * phases[j] ;	
+  }
+
+
   //  The correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
   cout << "Tp = " << Tp  << endl; 
@@ -195,12 +218,15 @@ void compute_local_mesons(GridCartesian & Grid,
     }
 
   cout << "Vector meson \n" ;
-  for(int tt = 0 ; tt < nt ; ++tt)
+  for(int j=0; j<3; j++) 
     {
-      double ttt = real(rho_corr[tt]) ;
-      cout << "RHO " << tt << " "  <<  ttt  << endl ;
+      sliceSum(c_rho[j] , rho_corr, Tp);
+      for(int tt = 0 ; tt < nt ; ++tt)
+	{
+	  double ttt = real(rho_corr[tt]) ;
+	  cout << "RHO[" << j <<  "] " << tt << " "  <<  ttt  << endl ;
+	}
     }
-
 
   cout << "A1 meson \n" ;
   for(int tt = 0 ; tt < nt ; ++tt)
