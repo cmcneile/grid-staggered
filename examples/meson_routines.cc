@@ -172,7 +172,9 @@ void compute_local_mesons(GridCartesian & Grid,
   //
 
   // pion correlator
-  std::vector<TComplex> corr(nt)  ;
+  std::vector<TComplex> pion_corr(nt)  ;
+  std::vector<TComplex> rho_corr(nt)  ;
+  std::vector<TComplex> a1_corr(nt)  ;
 
   // contract the quark propagators
   LatticeComplex  c(&Grid)  ;
@@ -182,14 +184,29 @@ void compute_local_mesons(GridCartesian & Grid,
   //  The correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
   cout << "Tp = " << Tp  << endl; 
-  sliceSum(c, corr, Tp);
+  sliceSum(c, pion_corr, Tp);
 
   // output the correlators
   cout << "Pseuodscalar Goldstone pion \n" ;
   for(int tt = 0 ; tt < nt ; ++tt)
     {
-      double ttt = real(corr[tt]) ;
-      cout << tt << " "  <<  ttt  << endl ;
+      double ttt = real(pion_corr[tt]) ;
+      cout << "PION " << tt << " "  <<  ttt  << endl ;
+    }
+
+  cout << "Vector meson \n" ;
+  for(int tt = 0 ; tt < nt ; ++tt)
+    {
+      double ttt = real(rho_corr[tt]) ;
+      cout << "RHO " << tt << " "  <<  ttt  << endl ;
+    }
+
+
+  cout << "A1 meson \n" ;
+  for(int tt = 0 ; tt < nt ; ++tt)
+    {
+      double ttt = real(a1_corr[tt]) ;
+      cout << "A1 " << tt << " "  <<  ttt  << endl ;
     }
 
 
