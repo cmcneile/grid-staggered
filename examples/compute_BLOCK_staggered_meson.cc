@@ -178,10 +178,12 @@ int main (int argc, char ** argv)
   // RealD c2=-1.0/24.0;
 
   ImprovedStaggeredFermionR Ds(Umu,Umu,Grid,RBGrid,2.0*mass,c1,c2,u0);
-
-
   MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> HermOp(Ds);
+
   ConjugateGradient<FermionField> CG(1.0e-8,10000);
+
+  int blockDim = 0;
+  BlockConjugateGradient<FermionField>  BCG(BlockCGrQVec,blockDim,1.0e-8,10000);
 
 
   // compute the meson spectrum
@@ -195,7 +197,7 @@ int main (int argc, char ** argv)
 
   {
     double t1=usecond();
-    compute_onemp_hybrid_BLOCK(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
+    compute_onemp_hybrid_BLOCK(Umu,Grid, HermOp, BCG, Ds, nt, Tp );  
     double t2=usecond();
     std::cout<< "Total-time: compute_onemp_hybrid_BLOCK   =   "<< (t2-t1)<< " usec"  << std::endl;
   }

@@ -584,7 +584,7 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
 
 void compute_onemp_hybrid_BLOCK(LatticeGaugeField & Umu, GridCartesian & Grid,   
 			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
-			  ConjugateGradient<FermionField> & CG , 
+				BlockConjugateGradient<FermionField> & BCG,
 			  ImprovedStaggeredFermionR & Ds, 
 			  int nt, int Tp)
 {
@@ -629,8 +629,12 @@ void compute_onemp_hybrid_BLOCK(LatticeGaugeField & Umu, GridCartesian & Grid,
 
   Qprop[1] = Qprop[0] = zero ;
 
+  /** use two sources  ***/
+  int no_vec = 2 ;
+  std::vector<LatticeStaggeredFermion> v_local_src(no_vec, &Grid) ;
+  std::vector<LatticeStaggeredFermion> v_out(no_vec, &Grid) ;
+
   // Compute the staggered quark propagators
-  for(int k=0; k<2; k++) 
     {
 
       for(int ic = 0 ; ic < 3 ; ++ic)
@@ -646,21 +650,25 @@ void compute_onemp_hybrid_BLOCK(LatticeGaugeField & Umu, GridCartesian & Grid,
 	  local_src = zero;
 	  pokeSite(cv,local_src,site);
 	  
-	  // shift the source
-	  if(k) local_src = hybrid_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
-	  
-	  Ds.Mdag(local_src, out) ; // apply Mdagger
-	  local_src = out;
+	  // local source
+	  Ds.Mdag(local_src, v_local_src[0]) ; // apply Mdagger
+
+	  // apply the hybrid operator onto point source
+	  local_src = hybrid_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
+	  Ds.Mdag(local_src,v_local_src[1] ) ; // apply Mdagger
 
 	  // invert 
-	  out = zero ;  // intial guess
-	  CG(HermOp,local_src,out);
+	  v_out[0] = zero ;  // intial guess
+	  v_out[1] = zero ;  // intial guess
 
-	  // apply the shifted operator to the sink
-	  if(k) out = hybrid_op(Umu, out, signs, shift_dir);
+	   BCG(HermOp,v_local_src,v_out);
+
+	  // apply the hybrid operator to the sink
+	  v_out[1] = hybrid_op(Umu, v_out[1], signs, shift_dir);
 
 	  // add solution to propagator structure
-	  FermToProp_s(Qprop[k], out , ic  ) ; 
+	  FermToProp_s(Qprop[0], v_out[0] , ic  ) ; 
+	  FermToProp_s(Qprop[1], v_out[1] , ic  ) ; 
 	}
     }
 
