@@ -66,7 +66,7 @@ void make_traceless(LatticeColourMatrix & B)
 }
 
 /**
-   1-+ hybrid staggered operator.
+   1-+ hybrid staggered operator using the (gamma_i cross 1) rho operator.
 
  **/
 
@@ -112,6 +112,52 @@ LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion
 
 
 
+/**
+   1-+ hybrid staggered operator using the (gamma_i cross gamma_i ) rho operator.
+
+ **/
+
+LatticeStaggeredFermion hybrid_localrho_op(LatticeGaugeField Umu, LatticeStaggeredFermion q, LatticeComplex *signs,
+                                  int dir)
+{
+  GridBase *grid = Umu._grid;
+  LatticeColourMatrix Bi(grid); LatticeColourMatrix Bj(grid);
+  int i, j;
+  const int shift = 1 ;
+
+
+  if(dir==0) 
+    { i=1; j=2;} 
+  else if(dir==1) 
+    {i=2; j=0;} 
+  else if(dir==2) 
+    {i=0; j=1;}
+  else
+    {
+      cout << "hybrid_op:: Error dir = " << dir << " out of range\n" ;
+      exit(0) ;
+    }
+
+  // compute the field strength tensor
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Bi, Umu, j, dir); 
+  WilsonLoops<PeriodicGimplR>::FieldStrength(Bj, Umu, i, dir); 
+
+   make_traceless(Bi) ;
+   make_traceless(Bj) ;
+
+  LatticeStaggeredFermion tmp(grid);
+
+  double milc_nrm = 8.0 ; 
+  tmp = signs[i]*Bj*q  - signs[j]*Bi*q ;
+
+  // Field strength in Grid devides by a factor of 8, but the MILC code does not
+  tmp *= milc_nrm ; 
+
+  return tmp;
+}
+
+
+
 void compute_local_mesons(GridCartesian & Grid,   
 			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
 			  ConjugateGradient<FermionField> & CG , 
@@ -128,10 +174,10 @@ void compute_local_mesons(GridCartesian & Grid,
   LatticeStaggeredFermion tmp(&Grid) ;
 
 ///////////////////////////////////////////////////////////////
-//		Staggered Phases
+//		Rho  Staggered Phases
 ///////////////////////////////////////////////////////////////
 
-  LatticeComplex phases[3] = {&Grid, &Grid, &Grid}; 
+  LatticeComplex rho_phases[3] = {&Grid, &Grid, &Grid}; 
   LatticeComplex one(&Grid), minusOne(&Grid); 
   one = 1; 
   minusOne = -1;
@@ -139,7 +185,17 @@ void compute_local_mesons(GridCartesian & Grid,
   LatticeInteger coor(&Grid);
   for(int i=0; i<3; i++) {
     LatticeCoordinate(coor,i);	// fills coor with value of coord in i dir.
-    phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+    rho_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+  }
+
+///////////////////////////////////////////////////////////////
+//		A1  Staggered Phases
+///////////////////////////////////////////////////////////////
+
+  LatticeComplex a1_phases[3] = {&Grid, &Grid, &Grid}; 
+  for(int i=0; i<3; i++) {
+    LatticeCoordinate(coor,i);	// fills coor with value of coord in i dir.
+    a1_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
   }
 
 
@@ -196,13 +252,14 @@ void compute_local_mesons(GridCartesian & Grid,
 
    c = trace(Qprop * adj(Qprop)) ; 
 
+#if 0
   // contract the quark propagators
   LatticeComplex  c_rho[3] = {&Grid, &Grid, &Grid};
 
   for(int j=0; j<3; j++) {
-        c_rho[j] = c * phases[j] ;	
+        c_rho[j] = c * rho_phases[j] ;	
   }
-
+#endif
 
   //  The correlator over the lattice is summed over the spatial
   //   lattice at each timeslice t.
@@ -217,10 +274,12 @@ void compute_local_mesons(GridCartesian & Grid,
       cout << "PION " << tt << " "  <<  ttt  << endl ;
     }
 
+  LatticeComplex  c_rho(&Grid) ;
   cout << "Vector meson \n" ;
   for(int j=0; j<3; j++) 
     {
-      sliceSum(c_rho[j] , rho_corr, Tp);
+      c_rho = c * rho_phases[j] ;	
+      sliceSum(c_rho  , rho_corr, Tp);
       for(int tt = 0 ; tt < nt ; ++tt)
 	{
 	  double ttt = real(rho_corr[tt]) ;
