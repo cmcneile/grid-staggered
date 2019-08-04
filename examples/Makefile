@@ -29,6 +29,9 @@ COMPILER=$(shell $(config) --cxx)
 cg.x: compute_staggered_meson.cc meson_routines.cc staggeredInclude.h
 	$(COMPILER) -g -o $@ $(CXXFLASGS)  compute_staggered_meson.cc meson_routines.cc  $(LDFLAGS) $(LIBS) 
 
+cg_block.x: compute_BLOCK_staggered_meson.cc meson_routines.cc staggeredInclude.h
+	$(COMPILER) -g -o $@ $(CXXFLASGS)  compute_BLOCK_staggered_meson.cc meson_routines.cc  $(LDFLAGS) $(LIBS) 
+
 io.x: dump_gauge_field.cc
 	$(COMPILER) -g -o $@ $(CXXFLASGS) dump_gauge_field.cc   $(LDFLAGS) $(LIBS) 
 

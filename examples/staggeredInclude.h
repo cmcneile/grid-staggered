@@ -41,3 +41,13 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
 			  ImprovedStaggeredFermionR & Ds, 
 				   int nt, int Tp)  ;
 
+
+
+
+void compute_onemp_hybrid_BLOCK(LatticeGaugeField & Umu, GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+				int nt, int Tp) ;
+
+
