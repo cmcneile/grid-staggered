@@ -448,7 +448,7 @@ void compute_onelink_rho(LatticeGaugeField & Umu, GridCartesian & Grid,
 
 /*****
 
-  1-+ hybrid operator
+  1-+ hybrid operator using the one link rho operator
 
  ***/
 
@@ -563,7 +563,135 @@ void compute_onemp_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,
       double ttt      = sss*real(corr[tt]) ;
       double ttt_img  = sss*imag(corr[tt]) ;
 
-      cout << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
+      cout << "ONEMP " << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
+    }
+  
+
+
+}
+
+
+
+
+
+/*****
+
+  1-+ hybrid operator using the local rho operator
+
+ ***/
+
+void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+			  int nt, int Tp)
+{
+
+///////////////////////////////////////////////////////////////
+//		Staggered Sign Functions
+///////////////////////////////////////////////////////////////
+
+  LatticeInteger coor[4] = {&Grid, &Grid, &Grid, &Grid}; 
+  LatticeInteger n[5] = {&Grid, &Grid, &Grid, &Grid, &Grid};
+  LatticeComplex signs[5] =  {&Grid, &Grid, &Grid, &Grid, &Grid}; 
+  LatticeComplex One(&Grid), minusOne(&Grid); One = 1; minusOne = -1;
+
+  for(int m=0; m<4; m++) {
+    LatticeCoordinate(coor[m], m);  
+  }
+
+  //  n[0] = 1; 
+  n[0] = 1; 
+  n[1] = coor[0]; 
+  n[2] = n[1] + coor[1]; 
+  n[3] = n[2] + coor[2];
+  n[4] = n[3] + coor[3];
+  
+  for(int i=0; i<5; i++) {
+    signs[i] = where((mod(n[i],2)== (Integer) 1), minusOne, One) ;
+  } 
+
+// The standard staggered sign functions, corresponding
+// to the gamma matrices. the phase from the inversion of M is signs[4].
+
+  enum dirs {XUP=0, YUP=1, ZUP=2, TUP=3};
+  dirs shift_dir = ZUP ; // index of hybrid operator
+
+//////////////////////////////////////////////////////////////
+
+
+  //  ./Grid/qcd/QCD.h
+  LatticeStaggeredFermion local_src(&Grid) ;
+  LatticeStaggeredFermion out(&Grid) ;
+  LatticeStaggeredPropagator Qprop[2] = {&Grid, &Grid}  ;
+
+  Qprop[1] = Qprop[0] = zero ;
+
+  // Compute the staggered quark propagators
+  for(int k=0; k<2; k++) 
+    {
+
+      for(int ic = 0 ; ic < 3 ; ++ic)
+	{
+	  cout << "---------------------------------------------" << endl ; 
+	  cout << "Inversion for colour " << ic << endl ; 
+	  cout << "---------------------------------------------" << endl ; 
+
+	  // create point source
+	  std::vector<int> site({0,0,0,0});
+	  ColourVector cv = zero;
+	  cv()()(ic)=1.0;  
+	  local_src = zero;
+	  pokeSite(cv,local_src,site);
+	  
+	  // shift the source
+	  if(k) local_src = hybrid_localrho_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
+	  
+	  Ds.Mdag(local_src, out) ; // apply Mdagger
+	  local_src = out;
+
+	  // invert 
+	  out = zero ;  // intial guess
+	  CG(HermOp,local_src,out);
+
+	  // apply the shifted operator to the sink
+	  if(k) out = hybrid_localrho_op(Umu, out, signs, shift_dir);
+
+	  // add solution to propagator structure
+	  FermToProp_s(Qprop[k], out , ic  ) ; 
+	}
+    }
+
+  //  -----  Use the quark propagator to compute the correlator
+
+  // correlator
+   std::vector<TComplex> corr(nt) ;
+
+  // contract the quark propagators
+  LatticeComplex  c(&Grid);
+
+  c = trace(adj(Qprop[0]) * Qprop[1]) ; 
+  c = c * signs[4];	// phase from inversion of M (aka epsilon)
+    // This should be in, but it gets almost MILC correlators.
+
+
+  //  The correlator over the lattice is summed over the spatial
+  //   lattice at each timeslice t.
+  //  cout << "\nTp = " << Tp  << "\n"; 
+  sliceSum(c, corr, Tp);
+
+  string dir_name[4] = {"X", "Y", "Z", "T"}; 
+
+  // output the correlators
+  cout << "\n\nSHIFTED Hybrid 1-+ dir= " << dir_name[shift_dir]  << "\n";
+
+  const double sss = -1 ;
+  for(int tt = 0 ; tt < nt ; ++tt) 
+    {
+      double ttt      = sss*real(corr[tt]) ;
+      double ttt_img  = sss*imag(corr[tt]) ;
+
+      cout << "ONEMP-LOCALRHO-Z " << tt << " "  <<  ttt << "  "   << ttt_img  << endl ;
     }
   
 
