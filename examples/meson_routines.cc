@@ -193,10 +193,26 @@ void compute_local_mesons(GridCartesian & Grid,
 ///////////////////////////////////////////////////////////////
 
   LatticeComplex a1_phases[3] = {&Grid, &Grid, &Grid}; 
-  for(int i=0; i<3; i++) {
-    LatticeCoordinate(coor,i);	// fills coor with value of coord in i dir.
-    a1_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
-  }
+  LatticeInteger coor_x(&Grid);
+  LatticeCoordinate(coor_x,0);	
+
+  LatticeInteger coor_y(&Grid);
+  LatticeCoordinate(coor_y,1);	
+
+  LatticeInteger coor_z(&Grid);
+  LatticeCoordinate(coor_z,2);	
+
+  LatticeInteger coor_t(&Grid);
+  LatticeCoordinate(coor_t,3);	
+
+  coor = coor_y+coor_z+coor_t ;
+  a1_phases[0] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+
+  coor = coor_x+coor_z+coor_t ;
+  a1_phases[1] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+
+  coor = coor_x+coor_y+coor_t ;
+  a1_phases[2] = where((mod(coor,2)==(Integer) 1), minusOne, one);
 
 
   for(int ic = 0 ; ic < 3 ; ++ic)
