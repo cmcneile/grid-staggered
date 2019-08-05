@@ -108,6 +108,8 @@ LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion
   // Field strength in Grid devides by a factor of 8, but the MILC code does not
   tmp *= milc_nrm ; 
 
+
+
   return tmp;
 }
 
@@ -133,7 +135,9 @@ LatticeStaggeredFermion hybrid_localrho_op(LatticeGaugeField Umu, LatticeStagger
   else if(dir==1) 
     {i=2; j=0;} 
   else if(dir==2) 
-    {i=0; j=1;}
+    {
+      i=0; j=1;
+    }
   else
     {
       cout << "hybrid_op:: Error dir = " << dir << " out of range\n" ;
@@ -154,6 +158,10 @@ LatticeStaggeredFermion hybrid_localrho_op(LatticeGaugeField Umu, LatticeStagger
 
   // Field strength in Grid devides by a factor of 8, but the MILC code does not
   tmp *= milc_nrm ; 
+
+  // DEBUG  ***  DEBUG  ***  DEBUG  ***  DEBUG  ***  DEBUG  ***  
+  // tmp = signs[0] * q ;
+  // DEBUG  ***  DEBUG  ***  DEBUG  ***  DEBUG  ***  DEBUG  ***  
 
   return tmp;
 }
@@ -779,6 +787,7 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
   for(int i=0; i<3; i++) {
     LatticeCoordinate(coor,i);	
     rho_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
+    //    std::cout << "DEBUG coor " << i << "\n" << coor << "\n" ; 
   }
 
 
