@@ -66,6 +66,7 @@ void make_traceless(LatticeColourMatrix & B)
 }
 
 /**
+
    1-+ hybrid staggered operator using the (gamma_i cross 1) rho operator.
 
  **/
@@ -117,8 +118,9 @@ LatticeStaggeredFermion hybrid_op(LatticeGaugeField Umu, LatticeStaggeredFermion
 
  **/
 
-LatticeStaggeredFermion hybrid_localrho_op(LatticeGaugeField Umu, LatticeStaggeredFermion q, LatticeComplex *signs,
-                                  int dir)
+LatticeStaggeredFermion hybrid_localrho_op(LatticeGaugeField Umu, LatticeStaggeredFermion q, 
+					   LatticeComplex *signs,
+					   int dir)
 {
   GridBase *grid = Umu._grid;
   LatticeColourMatrix Bi(grid); LatticeColourMatrix Bj(grid);
@@ -768,25 +770,19 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
 //		Staggered Sign Functions
 ///////////////////////////////////////////////////////////////
 
-  LatticeInteger coor[4] = {&Grid, &Grid, &Grid, &Grid}; 
-  LatticeInteger n[5] = {&Grid, &Grid, &Grid, &Grid, &Grid};
-  LatticeComplex signs[5] =  {&Grid, &Grid, &Grid, &Grid, &Grid}; 
-  LatticeComplex One(&Grid), minusOne(&Grid); One = 1; minusOne = -1;
+  LatticeComplex rho_phases[3] = {&Grid, &Grid, &Grid}; 
+  LatticeComplex one(&Grid), minusOne(&Grid); 
+  one = 1; 
+  minusOne = -1;
 
-  for(int m=0; m<4; m++) {
-    LatticeCoordinate(coor[m], m);  
+  LatticeInteger coor(&Grid);
+  for(int i=0; i<3; i++) {
+    LatticeCoordinate(coor,i);	
+    rho_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
   }
 
-  //  n[0] = 1; 
-  n[0] = 1; 
-  n[1] = coor[0]; 
-  n[2] = n[1] + coor[1]; 
-  n[3] = n[2] + coor[2];
-  n[4] = n[3] + coor[3];
-  
-  for(int i=0; i<5; i++) {
-    signs[i] = where((mod(n[i],2)== (Integer) 1), minusOne, One) ;
-  } 
+
+
 
 // The standard staggered sign functions, corresponding
 // to the gamma matrices. the phase from the inversion of M is signs[4].
@@ -822,7 +818,7 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
 	  pokeSite(cv,local_src,site);
 	  
 	  // shift the source
-	  if(k) local_src = hybrid_localrho_op(Umu, local_src, signs, shift_dir); // do the unshifted qprop first
+	  if(k) local_src = hybrid_localrho_op(Umu, local_src, rho_phases, shift_dir); // do the unshifted qprop first
 	  
 	  Ds.Mdag(local_src, out) ; // apply Mdagger
 	  local_src = out;
@@ -832,7 +828,7 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
 	  CG(HermOp,local_src,out);
 
 	  // apply the shifted operator to the sink
-	  if(k) out = hybrid_localrho_op(Umu, out, signs, shift_dir);
+	  if(k) out = hybrid_localrho_op(Umu, out, rho_phases, shift_dir);
 
 	  // add solution to propagator structure
 	  FermToProp_s(Qprop[k], out , ic  ) ; 
@@ -848,7 +844,7 @@ void compute_onemp_localrho_hybrid(LatticeGaugeField & Umu, GridCartesian & Grid
   LatticeComplex  c(&Grid);
 
   c = trace(adj(Qprop[0]) * Qprop[1]) ; 
-  c = c * signs[4];	// phase from inversion of M (aka epsilon)
+  //  c = c * signs[4];	// phase from inversion of M (aka epsilon)
     // This should be in, but it gets almost MILC correlators.
 
 
