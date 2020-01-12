@@ -191,7 +191,7 @@ int main (int argc, char ** argv)
 
   std::cout << "Start of QED analysis\n";
 
-
+  QED_mesons(Grid, HermOp, CG, Ds, nt, Tp );  
 
   // End of the Grid
   Grid_finalize();

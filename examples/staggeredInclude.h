@@ -51,3 +51,9 @@ void compute_onemp_hybrid_BLOCK(LatticeGaugeField & Umu, GridCartesian & Grid,
 				int nt, int Tp) ;
 
 
+
+void QED_mesons(GridCartesian & Grid,   
+			  MdagMLinearOperator<ImprovedStaggeredFermionR,FermionField> & HermOp,
+			  ConjugateGradient<FermionField> & CG , 
+			  ImprovedStaggeredFermionR & Ds, 
+		int nt, int Tp) ;

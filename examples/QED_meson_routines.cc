@@ -36,46 +36,11 @@ void QED_mesons(GridCartesian & Grid,
   LatticeStaggeredFermion res(&Grid) ;
   LatticeStaggeredFermion tmp(&Grid) ;
 
-///////////////////////////////////////////////////////////////
-//		Rho  Staggered Phases
-///////////////////////////////////////////////////////////////
-
-  LatticeComplex rho_phases[3] = {&Grid, &Grid, &Grid}; 
-  LatticeComplex one(&Grid), minusOne(&Grid); 
-  one = 1; 
-  minusOne = -1;
-
-  LatticeInteger coor(&Grid);
-  for(int i=0; i<3; i++) {
-    LatticeCoordinate(coor,i);	// fills coor with value of coord in i dir.
-    rho_phases[i] = where((mod(coor,2)==(Integer) 1), minusOne, one);
-  }
 
 ///////////////////////////////////////////////////////////////
-//		A1  Staggered Phases
+//		compute quark propagator
 ///////////////////////////////////////////////////////////////
 
-  LatticeComplex a1_phases[3] = {&Grid, &Grid, &Grid}; 
-  LatticeInteger coor_x(&Grid);
-  LatticeCoordinate(coor_x,0);	
-
-  LatticeInteger coor_y(&Grid);
-  LatticeCoordinate(coor_y,1);	
-
-  LatticeInteger coor_z(&Grid);
-  LatticeCoordinate(coor_z,2);	
-
-  LatticeInteger coor_t(&Grid);
-  LatticeCoordinate(coor_t,3);	
-
-  coor = coor_y+coor_z+coor_t ;
-  a1_phases[0] = where((mod(coor,2)==(Integer) 1), minusOne, one);
-
-  coor = coor_x+coor_z+coor_t ;
-  a1_phases[1] = where((mod(coor,2)==(Integer) 1), minusOne, one);
-
-  coor = coor_x+coor_y+coor_t ;
-  a1_phases[2] = where((mod(coor,2)==(Integer) 1), minusOne, one);
 
 
   for(int ic = 0 ; ic < 3 ; ++ic)
@@ -148,52 +113,6 @@ void QED_mesons(GridCartesian & Grid,
       cout << "PION " << tt << " "  <<  ttt  << endl ;
     }
 
-
-  /**
-     Rho meson
-   **/
-
-  LatticeComplex  c_rho(&Grid) ;
-  cout << "Vector meson \n" ;
-  for(int j=0; j<3; j++) 
-    {
-      c_rho = c * rho_phases[j] ;	
-      sliceSum(c_rho  , rho_corr, Tp);
-      for(int tt = 0 ; tt < nt ; ++tt)
-	{
-	  double ttt = real(rho_corr[tt]) ;
-	  cout << "RHO[" << j <<  "] " << tt << " "  <<  ttt  << endl ;
-	  rho_corr_av[tt]  += rho_corr[tt] ;
-	}
-    }
-      for(int tt = 0 ; tt < nt ; ++tt)
-	{
-	  double ttt = real(rho_corr_av[tt]) ;
-	  cout << "RHO[av] " << tt << " "  <<  ttt  << endl ;
-	}
-
-      /***
-	  a1 meson
-       ***/
-
-  cout << "A1 meson \n" ;
-  LatticeComplex  c_a1(&Grid) ;
-  for(int j=0; j<3; j++) 
-    {
-      c_a1= c * a1_phases[j] ;	
-      sliceSum(c_a1  , a1_corr, Tp);
-      for(int tt = 0 ; tt < nt ; ++tt)
-	{
-	  double ttt = real(a1_corr[tt]) ;
-	  cout << "A1[" << j <<  "] " << tt << " "  <<  ttt  << endl ;
-	  a1_corr_av[tt]  += a1_corr[tt] ;
-	}
-    }
-  for(int tt = 0 ; tt < nt ; ++tt)
-    {
-      double ttt = real(a1_corr_av[tt]) ;
-      cout << "A1[av] " << tt << " "  <<  ttt  << endl ;
-    }
 
 
 
