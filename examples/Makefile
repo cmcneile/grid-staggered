@@ -36,7 +36,7 @@ io.x: dump_gauge_field.cc
 	$(COMPILER) -g -o $@ $(CXXFLASGS) dump_gauge_field.cc   $(LDFLAGS) $(LIBS) 
 
 
-mesonQED.x: compute_staggered_perturQED_meson.cc  meson_routines.cc staggeredInclude.h
+mesonQED.x: compute_staggered_perturQED_meson.cc  meson_routines.cc staggeredInclude.h QED_meson_routines.cc 
 	$(COMPILER) -g -o $@ $(CXXFLASGS) compute_staggered_perturQED_meson.cc  meson_routines.cc QED_meson_routines.cc  $(LDFLAGS) $(LIBS) 
 
 

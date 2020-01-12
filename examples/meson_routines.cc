@@ -24,6 +24,25 @@ void FermToProp_s(LatticeStaggeredPropagator & Qprop, LatticeStaggeredFermion & 
 
 
 
+//////////////////////////////////////////////
+// Extract Fermion vector from propagator 
+//////////////////////////////////////////////
+
+void PropToFerm_s( LatticeStaggeredFermion & psi ,  LatticeStaggeredPropagator & Qprop, const int c)
+{
+  const int nc = 3 ;  // later use the dimension 
+
+  for(int i = 0; i < nc ; ++i)
+    {
+      //      pokeColour(Qprop, peekColour(psi, i), i, c);
+      pokeColour(psi, peekColour(Qprop, i, c), i);
+
+    }
+
+}
+
+
+
 LatticeStaggeredFermion symm_shift_n(LatticeGaugeField &Umu, LatticeStaggeredFermion q, int dir)
 {
   GridBase *grid = Umu._grid;
