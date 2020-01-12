@@ -187,19 +187,13 @@ int main (int argc, char ** argv)
   // compute the meson spectrum
   compute_local_mesons(Grid, HermOp, CG, Ds, nt, Tp );  
 
-  compute_onelink_rho(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
+  /* ----   start of peturbative QED analysis  ---- **/
 
-  compute_onemp_hybrid(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
-
-  compute_onemp_localrho_hybrid(Umu,Grid, HermOp, CG, Ds, nt, Tp );  
+  std::cout << "Start of QED analysis\n";
 
 
 
   // End of the Grid
   Grid_finalize();
 }
-
-
-
-
 
