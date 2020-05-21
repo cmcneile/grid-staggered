@@ -47,6 +47,12 @@ void QED_mesons(GridCartesian & Grid,
   LatticeStaggeredPropagator Seq1_Qprop(&Grid)  ;
   LatticeStaggeredPropagator Seq2_Qprop(&Grid)  ;
 
+  //  QED stuff  
+  //  tests//core/Test_qed.ccb
+  PhotonR photon(&Grid, PhotonR::Gauge::coulomb, PhotonR::ZmScheme::qedL);
+
+
+
 ///////////////////////////////////////////////////////////////
 //		compute quark propagator
 ///////////////////////////////////////////////////////////////
